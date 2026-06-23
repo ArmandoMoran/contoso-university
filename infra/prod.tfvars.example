@@ -1,0 +1,14 @@
+# Copy to prod.tfvars and fill in. Do not commit real values.
+subscription_id     = "00000000-0000-0000-0000-000000000000"
+tenant_id           = "00000000-0000-0000-0000-000000000000"
+prefix              = "contoso-univ"
+environment         = "prod"
+location            = "eastus"
+
+# Entra group/user set as the SQL AAD admin (passwordless; no SQL login).
+sql_admin_login     = "sql-admins"
+sql_admin_object_id = "00000000-0000-0000-0000-000000000000"
+
+# CI/CD service-connection identity; granted Key Vault Administrator so it can
+# create the Data Protection key during apply.
+deployer_object_id  = "00000000-0000-0000-0000-000000000000"

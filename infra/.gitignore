@@ -1,0 +1,9 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+# Real variable files hold IDs/secrets; only the example is committed.
+*.tfvars
+!*.tfvars.example
+# Keep the provider lock file committed (.terraform.lock.hcl).
