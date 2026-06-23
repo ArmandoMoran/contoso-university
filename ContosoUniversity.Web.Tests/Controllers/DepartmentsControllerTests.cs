@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 using ContosoUniversity.Tests;
 using ContosoUniversity.Common.Interfaces;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using ContosoUniversity.Common;
 using ContosoUniversity.Data.DbContexts;
 
@@ -35,7 +36,7 @@ namespace ContosoUniversity.Web.Tests.Controllers
             var config = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<WebProfile>();
-            });
+            }, new LoggerFactory());
             _mapper = config.CreateMapper();
 
 

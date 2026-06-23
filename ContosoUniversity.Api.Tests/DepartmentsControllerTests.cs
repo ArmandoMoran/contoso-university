@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using ContosoUniversity.Tests;
 using ContosoUniversity.Common.Interfaces;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using ContosoUniversity.Common.DTO;
 using ContosoUniversity.Api.DTO;
 using ContosoUniversity.Common;
@@ -34,7 +35,7 @@ namespace ContosoUniversity.Api.Tests
             var config = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<ApiProfile>();
-            });
+            }, new LoggerFactory());
             _mapper = config.CreateMapper();
             _sut = new DepartmentsController(mockUnitOfWork.Object, _mapper);
         }
