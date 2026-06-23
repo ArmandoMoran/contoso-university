@@ -19,7 +19,7 @@ namespace ContosoUniversity.Tests
             mockSet.As<IQueryable<TEntity>>().Setup(m => m.Expression).Returns(data.Expression);
             mockSet.As<IQueryable<TEntity>>().Setup(m => m.ElementType).Returns(data.ElementType);
             mockSet.As<IQueryable<TEntity>>().Setup(m => m.GetEnumerator()).Returns(() => data.GetEnumerator());
-            mockSet.As<IAsyncEnumerable<TEntity>>().Setup(m => m.GetEnumerator()).Returns(new TestAsyncEnumerator<TEntity>(data.GetEnumerator()));
+            mockSet.As<IAsyncEnumerable<TEntity>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<System.Threading.CancellationToken>())).Returns(new TestAsyncEnumerator<TEntity>(data.GetEnumerator()));
             return mockSet;
         }
 

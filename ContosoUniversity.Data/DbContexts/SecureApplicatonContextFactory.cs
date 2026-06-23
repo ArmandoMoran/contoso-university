@@ -18,16 +18,7 @@ namespace ContosoUniversity.Data.DbContexts
                 .Build();
 
             var builder = new DbContextOptionsBuilder<SecureApplicationContext>();
-
-            if (OperatingSystem.IsMacOs())
-            {
-                builder.UseSqlite("Data Source=ContosoUniversity.sqlite");
-            }
-            else
-            {
-                builder.UseSqlServer(config.GetConnectionString("DefaultConnection"));
-
-            }
+            builder.UseSqlServer(config.GetConnectionString("DefaultConnection"));
             return new SecureApplicationContext(builder.Options);
         }
     }

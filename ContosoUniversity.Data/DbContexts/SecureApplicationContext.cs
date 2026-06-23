@@ -15,10 +15,6 @@ namespace ContosoUniversity.Data.DbContexts
         {
             base.OnModelCreating(builder);
             string dbSchema = "Contoso";
-            if (OperatingSystem.IsMacOs())
-            {
-                dbSchema = null;
-            }
 
             var config = new DbContextConfig();
             config.SecureApplicationContextConfig(builder, dbSchema);

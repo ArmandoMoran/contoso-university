@@ -263,6 +263,7 @@ namespace ContosoUniversity.Web.Tests.Controllers
                       new Mock<IUserClaimsPrincipalFactory<ApplicationUser>>().Object,
                       null,
                       null,
+                      null,
                       null)
             { }
 

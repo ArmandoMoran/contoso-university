@@ -1,17 +1,16 @@
-using System;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using ContosoUniversity.Data;
-using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using ContosoUniversity.Common.Interfaces;
-using ContosoUniversity.Common.Data;
-using ContosoUniversity.Data.Entities;
-using Microsoft.AspNetCore.Identity;
+using ContosoUniversity.Data;
 using ContosoUniversity.Data.DbContexts;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Testcontainers.MsSql;
+using Xunit;
 
 namespace ContosoUniversity.Web.IntegrationTests
 {
@@ -19,56 +18,62 @@ namespace ContosoUniversity.Web.IntegrationTests
     {
         public void Initialize()
         {
-            // todo
+            // Schema + seed are handled by the factory against the SQL container.
         }
     }
-    public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
+
+    // Integration tests run against a real SQL Server in a throwaway Docker container
+    // (Testcontainers) — the same provider as production — instead of EF InMemory.
+    // Requires a running Docker daemon.
+    public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup>, IAsyncLifetime
+        where TStartup : class
     {
+        private readonly MsSqlContainer _sqlContainer = new MsSqlBuilder().Build();
+
+        async Task IAsyncLifetime.InitializeAsync()
+        {
+            await _sqlContainer.StartAsync();
+        }
+
+        async Task IAsyncLifetime.DisposeAsync()
+        {
+            await _sqlContainer.DisposeAsync();
+        }
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            builder.ConfigureServices(services =>
+            builder.UseEnvironment("Testing");
+
+            builder.ConfigureTestServices(services =>
             {
-                // Create a new service provider
-                var serviceProvider = new ServiceCollection()
-                        .AddEntityFrameworkInMemoryDatabase()
-                        .BuildServiceProvider();
+                // Point every context at the SQL container instead of the in-memory provider
+                // that AddCustomizedContext registers for the Testing environment.
+                ReplaceWithSqlContainer<ApplicationContext>(services);
+                ReplaceWithSqlContainer<SecureApplicationContext>(services);
+                ReplaceWithSqlContainer<WebContext>(services);
+                ReplaceWithSqlContainer<ApiContext>(services);
 
-                // Add a database context (WebContext) using an in-memory database for testing
-                services.AddDbContext<WebContext>(options =>
-                {
-                    options.UseInMemoryDatabase("InMemoryDbForTesting");
-                    options.UseInternalServiceProvider(serviceProvider);
-                });
+                services.AddScoped<IDbInitializer, TestDbInitializer>();
 
-                // Add a database context (SecureApplicationContext) using an in-memory database for testing
-                services.AddDbContext<SecureApplicationContext>(options =>
-                {
-                    options.UseInMemoryDatabase("InMemorySecureDbForTesting");
-                    options.UseInternalServiceProvider(serviceProvider);
-                });
-                // Add a database context (ApplicationContext) using an in-memory database for testing
-                services.AddDbContext<ApplicationContext>(options =>
-                {
-                    options.UseInMemoryDatabase("InMemoryForTesting");
-                    options.UseInternalServiceProvider(serviceProvider);
-                });
-
-                var sp = services.BuildServiceProvider();
-
-                using (var scope = sp.CreateScope())
-                {
-                    var db = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-                    db.Database.EnsureCreated();
-                    Utilities.InitializeDbForTest(db);
-                }
+                using var scope = services.BuildServiceProvider().CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+                db.Database.EnsureCreated();
+                Utilities.InitializeDbForTest(db);
             });
+        }
 
-            builder.UseEnvironment("Testing")
-                   .ConfigureTestServices(services =>
-                    {
-                        services.AddScoped<IDbInitializer, TestDbInitializer>();
-                    });
+        private void ReplaceWithSqlContainer<TContext>(IServiceCollection services) where TContext : DbContext
+        {
+            var toRemove = services
+                .Where(d => d.ServiceType == typeof(DbContextOptions<TContext>))
+                .ToList();
+            foreach (var descriptor in toRemove)
+            {
+                services.Remove(descriptor);
+            }
 
+            services.AddDbContext<TContext>(options =>
+                options.UseSqlServer(_sqlContainer.GetConnectionString()));
         }
     }
 }

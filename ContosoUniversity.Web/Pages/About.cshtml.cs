@@ -36,10 +36,6 @@ namespace ContosoUniversity.Web.Pages
                 {
                     // todo: read from configuration
                     var dbSchema = "Contoso.";
-                    if (ContosoUniversity.Common.OperatingSystem.IsMacOs())
-                    {
-                        dbSchema = string.Empty;
-                    }
                     string query = $"SELECT EnrollmentDate, COUNT(*) AS StudentCount FROM {dbSchema}Person WHERE Discriminator = 'Student' GROUP BY EnrollmentDate";
                     command.CommandText = query;
                     DbDataReader reader = await command.ExecuteReaderAsync();

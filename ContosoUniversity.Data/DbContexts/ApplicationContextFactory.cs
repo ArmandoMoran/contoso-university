@@ -20,14 +20,7 @@ namespace ContosoUniversity.Data
                 .Build();
 
             var builder = new DbContextOptionsBuilder<ApplicationContext>();
-            if (OperatingSystem.IsMacOs())
-            {
-                builder.UseSqlite("Data Source=ContosoUniversity.sqlite");
-            }
-            else
-            {
-                builder.UseSqlServer(config.GetConnectionString("DefaultConnection"), x => x.MigrationsHistoryTable("Migration", "Contoso"));
-            }
+            builder.UseSqlServer(config.GetConnectionString("DefaultConnection"), x => x.MigrationsHistoryTable("Migration", "Contoso"));
             return new ApplicationContext(builder.Options);
         }
     }

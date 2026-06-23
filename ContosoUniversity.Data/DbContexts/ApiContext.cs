@@ -11,10 +11,6 @@ namespace ContosoUniversity.Data.DbContexts
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             string schema = "Contoso";
-            if (OperatingSystem.IsMacOs())
-            {
-                schema = null;
-            }
 
             var config = new DbContextConfig();
             config.ApplicationContextConfig(modelBuilder, schema);

@@ -25,7 +25,7 @@ namespace ContosoUniversity.Web.Tests.Views
                   (Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)))
             {
                 driver.Navigate().GoToUrl(home);
-                var jumbotron = driver.FindElementByClassName("jumbotron");
+                var jumbotron = driver.FindElement(By.ClassName("jumbotron"));
                 var h1 = jumbotron.FindElement(By.TagName("h1"));
                 Assert.Equal("Contoso University", h1.Text);
             }

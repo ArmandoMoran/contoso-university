@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Query.Internal;
+using Microsoft.EntityFrameworkCore.Query;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -36,14 +36,20 @@ namespace ContosoUniversity.Tests
             return _inner.Execute<TResult>(expression);
         }
 
-        public IAsyncEnumerable<TResult> ExecuteAsync<TResult>(Expression expression)
+        // EF Core 3.0+ single ExecuteAsync; wraps the synchronous result in a Task<T>.
+        public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
         {
-            return new TestAsyncEnumerable<TResult>(expression);
-        }
+            var expectedResultType = typeof(TResult).GetGenericArguments()[0];
+            var executionResult = typeof(IQueryProvider)
+                .GetMethods()
+                .First(m => m.Name == nameof(IQueryProvider.Execute) && m.IsGenericMethod)
+                .MakeGenericMethod(expectedResultType)
+                .Invoke(_inner, new[] { expression });
 
-        public Task<TResult> ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(Execute<TResult>(expression));
+            return (TResult)typeof(Task)
+                .GetMethod(nameof(Task.FromResult))
+                .MakeGenericMethod(expectedResultType)
+                .Invoke(null, new[] { executionResult });
         }
     }
 
@@ -57,15 +63,12 @@ namespace ContosoUniversity.Tests
             : base(expression)
         { }
 
-        public IAsyncEnumerator<T> GetEnumerator()
+        public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {
             return new TestAsyncEnumerator<T>(this.AsEnumerable().GetEnumerator());
         }
 
-        IQueryProvider IQueryable.Provider
-        {
-            get { return new TestAsyncQueryProvider<T>(this); }
-        }
+        IQueryProvider IQueryable.Provider => new TestAsyncQueryProvider<T>(this);
     }
 
     internal class TestAsyncEnumerator<T> : IAsyncEnumerator<T>
@@ -77,22 +80,17 @@ namespace ContosoUniversity.Tests
             _inner = inner;
         }
 
-        public void Dispose()
+        public T Current => _inner.Current;
+
+        public ValueTask<bool> MoveNextAsync()
+        {
+            return new ValueTask<bool>(_inner.MoveNext());
+        }
+
+        public ValueTask DisposeAsync()
         {
             _inner.Dispose();
-        }
-
-        public T Current
-        {
-            get
-            {
-                return _inner.Current;
-            }
-        }
-
-        public Task<bool> MoveNext(CancellationToken cancellationToken)
-        {
-            return Task.FromResult(_inner.MoveNext());
+            return new ValueTask();
         }
     }
 }

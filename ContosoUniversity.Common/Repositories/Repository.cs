@@ -62,7 +62,7 @@ namespace ContosoUniversity.Data
         
         public async Task<int> ExecuteSqlCommandAsync(string queryString)
         {
-            return await context.Database.ExecuteSqlCommandAsync(queryString);
+            return await context.Database.ExecuteSqlRawAsync(queryString);
         }
 
         public DbConnection GetDbConnection()

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.PlatformAbstractions;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
 using System.Reflection;
@@ -87,7 +86,7 @@ namespace ContosoUniversity.Tests
             var projectName = startupAssembly.GetName().Name;
 
             // Get currently executing test project path
-            var applicationBasePath = PlatformServices.Default.Application.ApplicationBasePath;
+            var applicationBasePath = AppContext.BaseDirectory;
 
             // Find the folder which contains the solution file. We then use this information to find the target
             // project which we want to test.
