@@ -5,7 +5,7 @@
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
 
-        <mxCell id="title" value="Contoso University — Azure Target Architecture (Replatform to .NET 8)" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#0F1E2B;" vertex="1" parent="1">
+        <mxCell id="title" value="Contoso University — Azure Target Architecture (Replatform to .NET 10)" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#0F1E2B;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="760" height="30" as="geometry" />
         </mxCell>
 
@@ -39,10 +39,10 @@
         <mxCell id="compute" value="App Service for Containers (Linux) · VNet-integrated · autoscale" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2F7FC;strokeColor=#9FB6CC;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontColor=#0F1E2B;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="280" y="300" width="430" height="250" as="geometry" />
         </mxCell>
-        <mxCell id="web" value="Web App&#10;MVC + Razor (.NET 8)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CDE4F5;strokeColor=#1183C9;fontColor=#0F1E2B;" vertex="1" parent="1">
+        <mxCell id="web" value="Web App&#10;MVC + Razor (.NET 10)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CDE4F5;strokeColor=#1183C9;fontColor=#0F1E2B;" vertex="1" parent="1">
           <mxGeometry x="305" y="350" width="180" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="api" value="REST API&#10;+ Swagger (.NET 8)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CDE4F5;strokeColor=#1183C9;fontColor=#0F1E2B;" vertex="1" parent="1">
+        <mxCell id="api" value="REST API&#10;+ Swagger (.NET 10)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CDE4F5;strokeColor=#1183C9;fontColor=#0F1E2B;" vertex="1" parent="1">
           <mxGeometry x="305" y="450" width="180" height="70" as="geometry" />
         </mxCell>
         <mxCell id="health" value="/health (live + ready) probes" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontColor=#5B7185;" vertex="1" parent="1">
@@ -109,7 +109,7 @@
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
 
-        <mxCell id="ctitle" value="CI/CD Pipeline — GitHub Actions → Azure (OIDC, no stored secrets)" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#0F1E2B;" vertex="1" parent="1">
+        <mxCell id="ctitle" value="CI/CD Pipeline — Azure DevOps Pipelines → Azure (Workload Identity Federation, no stored secrets)" style="text;html=1;align=left;verticalAlign=middle;fontSize=18;fontStyle=1;fontColor=#0F1E2B;" vertex="1" parent="1">
           <mxGeometry x="40" y="20" width="820" height="30" as="geometry" />
         </mxCell>
 
@@ -120,7 +120,7 @@
           <mxGeometry x="230" y="100" width="150" height="70" as="geometry" />
         </mxCell>
 
-        <mxCell id="ci" value="CI — GitHub Actions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2F7FC;strokeColor=#9FB6CC;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontColor=#0F1E2B;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="ci" value="CI — Azure Pipelines" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2F7FC;strokeColor=#9FB6CC;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontColor=#0F1E2B;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="420" y="80" width="320" height="320" as="geometry" />
         </mxCell>
         <mxCell id="ci1" value="dotnet restore / build" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CDE4F5;strokeColor=#1183C9;fontColor=#0F1E2B;fontSize=11;" vertex="1" parent="1">
@@ -132,7 +132,7 @@
         <mxCell id="ci3" value="React SPA build (npm, pinned Node)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CDE4F5;strokeColor=#1183C9;fontColor=#0F1E2B;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="440" y="210" width="280" height="35" as="geometry" />
         </mxCell>
-        <mxCell id="ci4" value="CodeQL / SonarCloud · dotnet list --vulnerable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CDE4F5;strokeColor=#1183C9;fontColor=#0F1E2B;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="ci4" value="Code scanning (MSDO / CodeQL) · dotnet list --vulnerable" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CDE4F5;strokeColor=#1183C9;fontColor=#0F1E2B;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="440" y="255" width="280" height="35" as="geometry" />
         </mxCell>
         <mxCell id="ci5" value="docker build (multi-stage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#CDE4F5;strokeColor=#1183C9;fontColor=#0F1E2B;fontSize=11;" vertex="1" parent="1">
@@ -145,7 +145,7 @@
         <mxCell id="acr2" value="Azure Container Registry&#10;push image (commit-SHA tag)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBF7;strokeColor=#1183C9;fontColor=#0F1E2B;" vertex="1" parent="1">
           <mxGeometry x="790" y="100" width="180" height="70" as="geometry" />
         </mxCell>
-        <mxCell id="iac" value="IaC — Bicep / Terraform&#10;what-if / plan → apply" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBF7;strokeColor=#1183C9;fontColor=#0F1E2B;" vertex="1" parent="1">
+        <mxCell id="iac" value="IaC — Terraform&#10;plan → apply" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBF7;strokeColor=#1183C9;fontColor=#0F1E2B;" vertex="1" parent="1">
           <mxGeometry x="790" y="200" width="180" height="70" as="geometry" />
         </mxCell>
 

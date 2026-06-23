@@ -14,7 +14,7 @@ the tools listed under **Prerequisites**.
 | Phase | Goal | Outcome | Touches |
 |------:|------|---------|---------|
 | **0** | Baseline & safety net | Pinned reproducible build, branch, green tests on 2.1 | repo, CI |
-| **1** | Upgrade to .NET 8 (LTS) | Solution builds & all tests pass on `net8.0` | every `.csproj`, `Program.cs`, `Startup.cs` |
+| **1** | Upgrade to .NET 10 (LTS) | Solution builds & all tests pass on `net10.0` | every `.csproj`, `Program.cs`, `Startup.cs` |
 | **2** | Make it cloud-ready (code) | One SQL provider, real migrations, vaulted secrets, DP keys, health, telemetry | `ServiceCollectionExtensions`, `Startup`, `Data`, config |
 | **3** | Containerize | One image per app, runs locally via Compose | new `Dockerfile`s, `docker-compose.yml`, `.dockerignore` |
 | **4** | Provision Azure (IaC) | All resources exist, reproducible from Terraform | new `infra/` Terraform |
@@ -46,12 +46,12 @@ I've picked sensible defaults so the plan is concrete. Flag any you'd change bef
 
 ```bash
 # Local toolchain
-dotnet --list-sdks                      # need 8.0.x  (winget install Microsoft.DotNet.SDK.8)
+dotnet --list-sdks                      # need 10.0.x (winget install Microsoft.DotNet.SDK.10)
 docker --version                        # Docker Desktop
 az version                              # Azure CLI  (az upgrade)
 terraform version                       # Terraform >= 1.6  (winget install Hashicorp.Terraform)
 az extension add --name azure-devops    # Azure DevOps CLI (provides az devops / az pipelines)
-dotnet tool install --global dotnet-ef  # EF Core CLI (8.x)
+dotnet tool install --global dotnet-ef  # EF Core CLI (10.x)
 dotnet tool install --global upgrade-assistant   # optional, helps Phase 1
 ```
 
@@ -82,9 +82,9 @@ Goal: a known-good starting point you can always return to.
 
 ---
 
-## Phase 1 — Upgrade to .NET 8 (LTS)  · dossier R1
+## Phase 1 — Upgrade to .NET 10 (LTS)  · dossier R1
 
-> Do this first and in isolation. Nothing else is safe until the app builds and **all tests pass** on `net8.0`.
+> Do this first and in isolation. Nothing else is safe until the app builds and **all tests pass** on `net10.0`. The jump skips many major versions (2.1 → 10), so lean on `upgrade-assistant`, the compiler, and the cumulative breaking-changes docs.
 
 ### 1.1 Retarget every project
 
@@ -92,12 +92,12 @@ Goal: a known-good starting point you can always return to.
   - Web SDK apps (`Web`, `Api`, `Spa.React`) and class libs (`Common`, `Data`) and all test projects:
     ```diff
     - <TargetFramework>netcoreapp2.1</TargetFramework>
-    + <TargetFramework>net8.0</TargetFramework>
+    + <TargetFramework>net10.0</TargetFramework>
     ```
 - [ ] Update `global.json`:
     ```diff
     - "version": "2.1.300"
-    + "version": "8.0.400", "rollForward": "latestMinor"
+    + "version": "10.0.100", "rollForward": "latestMinor"
     ```
 - [ ] Remove the version pin on the shared framework where present and let the Web SDK imply it:
     ```diff
@@ -108,19 +108,19 @@ Goal: a known-good starting point you can always return to.
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     ```
 
-### 1.2 Bump packages (2.1 → 8.0)
+### 1.2 Bump packages (2.1 → 10.0)
 
 - [ ] `ContosoUniversity.Data.csproj`:
-  - `Microsoft.EntityFrameworkCore*` `2.1` → `8.0.*` (`SqlServer`, `Design`)
+  - `Microsoft.EntityFrameworkCore*` `2.1` → `10.0.*` (`SqlServer`, `Design`)
   - **Drop** `Microsoft.EntityFrameworkCore.Sqlite` (the macOS branch goes away in Phase 2)
   - Keep `InMemory` only until Phase 2 swaps tests to Testcontainers
-  - `Microsoft.AspNetCore.Identity.EntityFrameworkCore` → `8.0.*`
+  - `Microsoft.AspNetCore.Identity.EntityFrameworkCore` → `10.0.*`
 - [ ] `ContosoUniversity.Api.csproj`:
-  - `Microsoft.AspNetCore.Authentication.JwtBearer` → `8.0.*`
-  - `Swashbuckle.AspNetCore` `1.0.0` → `6.6.*` (API surface changed — see 1.4)
+  - `Microsoft.AspNetCore.Authentication.JwtBearer` → `10.0.*`
+  - `Swashbuckle.AspNetCore` `1.0.0` → `8.*` (API surface changed — see 1.4; .NET 10 also ships built-in OpenAPI via `Microsoft.AspNetCore.OpenApi`)
   - Remove `Microsoft.AspNetCore` / `Microsoft.AspNetCore.Mvc` / `StaticFiles` explicit refs (in the shared framework now)
-- [ ] `ContosoUniversity.Spa.React.csproj`: `Microsoft.AspNetCore.SpaServices.Extensions` → `8.0.*` (SpaProxy model)
-- [ ] Test projects: `Microsoft.AspNetCore.Mvc.Testing` → `8.0.*`, xUnit/Moq to current.
+- [ ] `ContosoUniversity.Spa.React.csproj`: `Microsoft.AspNetCore.SpaServices.Extensions` → `10.0.*` (SpaProxy model)
+- [ ] Test projects: `Microsoft.AspNetCore.Mvc.Testing` → `10.0.*`, xUnit/Moq to current.
 - [ ] Run `dotnet list package --outdated` to catch stragglers (AutoMapper, Newtonsoft, etc.).
 
 ### 1.3 Modernize the host (keep `Startup` to minimize churn)
@@ -151,8 +151,8 @@ public static IHostBuilder CreateHostBuilder(string[] args) =>
   + app.UseEndpoints(e => e.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}"));
   ```
 - [ ] `services.AddMvc()` → `AddControllersWithViews()` + `AddRazorPages()` (Web); `AddControllers()` (Api).
-- [ ] Swashbuckle 6: `Swashbuckle.AspNetCore.Swagger.Info` → `Microsoft.OpenApi.Models.OpenApiInfo`; `services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo{...}))`.
-- [ ] `AddJwtBearer` / Identity option names: verify against 8.0 (mostly source-compatible).
+- [ ] Swashbuckle 6+: `Swashbuckle.AspNetCore.Swagger.Info` → `Microsoft.OpenApi.Models.OpenApiInfo`; `services.AddSwaggerGen(c => c.SwaggerDoc("v1", new OpenApiInfo{...}))`.
+- [ ] `AddJwtBearer` / Identity option names: verify against 10.0 (mostly source-compatible).
 - [ ] AutoMapper `AddAutoMapper` signature/profile registration.
 
 ### 1.5 Green the build & tests
@@ -166,9 +166,9 @@ public static IHostBuilder CreateHostBuilder(string[] args) =>
   dotnet test ContosoUniversity.Web.IntegrationTests/ContosoUniversity.Web.IntegrationTests.csproj
   ```
 
-**Acceptance:** solution builds on `net8.0`; all test projects pass; app runs locally against LocalDB.
+**Acceptance:** solution builds on `net10.0`; all test projects pass; app runs locally against LocalDB.
 **Rollback:** revert the branch; Phase 1 is self-contained.
-**PR:** "Upgrade to .NET 8 (LTS)" — review independently before Phase 2.
+**PR:** "Upgrade to .NET 10 (LTS)" — review independently before Phase 2.
 
 ---
 
@@ -262,13 +262,13 @@ no secrets in source; health endpoints respond; tests green.
 
 - [ ] Add a multi-stage `Dockerfile` for **Web** and **Api** (non-root, port 8080):
   ```dockerfile
-  FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+  FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
   WORKDIR /src
   COPY . .
   RUN dotnet restore ContosoUniversity.Web/ContosoUniversity.Web.csproj
   RUN dotnet publish ContosoUniversity.Web/ContosoUniversity.Web.csproj -c Release -o /app
 
-  FROM mcr.microsoft.com/dotnet/aspnet:8.0
+  FROM mcr.microsoft.com/dotnet/aspnet:10.0
   WORKDIR /app
   COPY --from=build /app .
   ENV ASPNETCORE_URLS=http://+:8080
@@ -416,18 +416,18 @@ authenticate to Azure via an ARM **service connection using Workload Identity Fe
 
 | Risk | Likelihood | Mitigation |
 |------|:----------:|-----------|
-| .NET 8 upgrade surfaces hidden behavior changes | Med | Phase 1 isolated + full test suite before anything else; Testcontainers (2.7) catches SQL-only bugs |
+| .NET 10 upgrade surfaces hidden behavior changes | Med | Phase 1 isolated + full test suite before anything else; Testcontainers (2.7) catches SQL-only bugs |
 | Missing migrations → schema drift on Azure SQL | Med | Regenerate clean `InitialCreate` (2.2); apply idempotent scripts in CD; verify against schema baseline (Phase 0) |
 | Auth breaks at scale (DP keys) | High if skipped | R4 before scaling past 1 instance; validate by swapping/recycling staging slot and re-checking login |
 | Secret leakage during transition | Med | Move to Key Vault in 2.3; rotate the JWT key on cutover; scrub history if ever committed |
 | Passwordless SQL misconfig blocks startup | Med | Keep SQL-auth-with-vaulted-password (D4 alt) as fallback; test in staging first |
-| OIDC/role assignment gaps stall CD | Low | Validate 5.1 with a no-op deploy before wiring the full pipeline |
+| WIF / role assignment gaps stall CD | Low | Validate 5.1 (service connection) with a no-op deploy before wiring the full pipeline |
 
 ---
 
 ## Suggested PR sequence
 
-1. **`feat/net8-upgrade`** — Phase 1 only (mergeable on its own).
+1. **`feat/net10-upgrade`** — Phase 1 only (mergeable on its own).
 2. **`feat/cloud-ready`** — Phase 2 (config, migrations, secrets, DP, health, telemetry).
 3. **`feat/containerize`** — Phase 3 (Dockerfiles, compose, front-end cleanup).
 4. **`feat/infra-terraform`** — Phase 4 (`infra/`).

@@ -48,7 +48,7 @@ dotnet run --project ContosoUniversity.Api     # API + Swagger UI
 ## Gotchas / important findings
 
 - **Framework is end-of-life.** Everything targets `netcoreapp2.1` (SDK pinned to `2.1.300` in
-  `global.json`); .NET Core 2.1 has been unsupported since **Aug 2021**. The upgrade to .NET 8 LTS
+  `global.json`); .NET Core 2.1 has been unsupported since **Aug 2021**. The upgrade to .NET 10 LTS
   is the prerequisite for any cloud work.
 - **Migrations are incomplete.** Only `*ModelSnapshot.cs` files are committed under
   `ContosoUniversity.Data/Migrations/` — **no migration classes**. A clean `InitialCreate` /
@@ -65,8 +65,8 @@ dotnet run --project ContosoUniversity.Api     # API + Swagger UI
 
 ## Azure migration (planned)
 
-Target: **replatform** to Azure PaaS — .NET 8 containers on App Service, Azure SQL, Key Vault +
-Managed Identity, GitHub Actions CI/CD. Design maps 1:1 to AWS (table in the dossier).
+Target: **replatform** to Azure PaaS — .NET 10 containers on App Service, Azure SQL, Key Vault +
+Managed Identity, Azure DevOps Pipelines CI/CD. Design maps 1:1 to AWS (table in the dossier).
 
 **Full deliverables** (read these before doing migration work):
 - `docs/cloud-migration/implementation-plan.md` — the executable, phase-by-phase runbook (commands, acceptance criteria, rollback, risk register).
@@ -78,11 +78,11 @@ Managed Identity, GitHub Actions CI/CD. Design maps 1:1 to AWS (table in the dos
 | Phase | Goal |
 |------:|------|
 | 0 | Baseline & safety net — branch, confirm green tests on 2.1 |
-| 1 | **Upgrade to .NET 8 (LTS)** — retarget projects, bump packages, modernize hosts, fix breaking APIs, all tests green |
+| 1 | **Upgrade to .NET 10 (LTS)** — retarget projects, bump packages, modernize hosts, fix breaking APIs, all tests green |
 | 2 | Cloud-ready code — single SQL provider, **real migrations**, secrets → Key Vault + Managed Identity, Data Protection key ring, forwarded headers/HSTS, health checks, telemetry |
 | 3 | Containerize — multi-stage Dockerfiles, Compose, drop Bower |
 | 4 | Provision Azure with **Terraform** (`azurerm`, remote state in a storage-account backend) |
-| 5 | CI/CD — GitHub Actions via OIDC → ACR → migrate → staging slot → approval → blue-green swap |
+| 5 | CI/CD — Azure DevOps Pipelines via Workload Identity Federation → ACR → migrate → staging slot → approval → blue-green swap |
 | 6 | Cutover & harden — DNS/TLS, private endpoints, autoscale, DR, cost, cleanup |
 
 ### Confirmed decisions / defaults
@@ -91,12 +91,12 @@ Managed Identity, GitHub Actions CI/CD. Design maps 1:1 to AWS (table in the dos
 - **Compute:** App Service for Containers (Linux); Web + Api as two App Services; React SPA as Azure Static Web App.
 - **Environments:** `staging` + `prod` via deployment slots.
 - **SQL auth:** Entra Managed Identity (passwordless).
-- **Edge:** Front Door + WAF. **CI:** GitHub Actions with OIDC (no stored cloud secrets).
+- **Edge:** Front Door + WAF. **CI:** Azure DevOps Pipelines with Workload Identity Federation (no stored cloud secrets).
 - **Naming/region (placeholder):** `eastus`, prefix `contoso-univ`, RG `rg-contoso-univ-prod`.
 
 ### Suggested PR sequence
 
-`feat/net8-upgrade` → `feat/cloud-ready` → `feat/containerize` → `feat/infra-terraform` → `feat/cicd` → Phase 6 issues.
+`feat/net10-upgrade` → `feat/cloud-ready` → `feat/containerize` → `feat/infra-terraform` → `feat/cicd` → Phase 6 issues.
 
 ## Conventions
 
