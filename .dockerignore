@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/.vs/
+**/.git/
+.git/
+.gitignore
+**/appsettings.Development.json
+**/wwwroot/lib/
+artifacts/
+**/*.user
+**/Dockerfile
+docker-compose*.yml
+README.md
+docs/

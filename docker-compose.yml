@@ -1,0 +1,45 @@
+# Local dev stack: MVC web + REST API + SQL Server 2022.
+#   docker compose up --build
+# Web -> http://localhost:8080, API/Swagger -> http://localhost:8081/swagger
+# SA password is a LOCAL-ONLY convenience; the cloud uses Azure SQL + Managed
+# Identity (no passwords). Override with: SA_PASSWORD=... docker compose up
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD:-Your_strong_Pass123!}"
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  web:
+    build:
+      context: .
+      dockerfile: ContosoUniversity.Web/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=db;Database=ContosoUniversity2017;User Id=sa;Password=${SA_PASSWORD:-Your_strong_Pass123!};TrustServerCertificate=True;MultipleActiveResultSets=true"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: ContosoUniversity.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=db;Database=ContosoUniversity2017;User Id=sa;Password=${SA_PASSWORD:-Your_strong_Pass123!};TrustServerCertificate=True;MultipleActiveResultSets=true"
+    ports:
+      - "8081:8080"
+    depends_on:
+      db:
+        condition: service_healthy
