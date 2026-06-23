@@ -39,31 +39,40 @@ dotnet run --project ContosoUniversity.Web    # MVC site
 dotnet run --project ContosoUniversity.Api     # API + Swagger UI
 ```
 
-- Local DB: SQL Server **LocalDB** on Windows (connection string hardcoded in `appsettings.json`),
-  SQLite on macOS, EF **InMemory** under the `Testing` environment — selected at runtime by OS in
-  `ServiceCollectionExtensions.AddCustomizedContext`.
+- **Single SQL Server provider** (`ServiceCollectionExtensions.AddCustomizedContext`) with
+  `EnableRetryOnFailure`; EF **InMemory** only under the `Testing` environment (unit/controller tests).
+  The connection string comes from config (user-secrets / `appsettings.Development.json` locally;
+  injected in Azure) — no longer hardcoded, and the macOS/SQLite branch is gone.
 - In **Development**, the schema/seed is created in-process via `dbInitializer.Initialize()`.
-- Secrets are read from user-secrets / config locally (SendGrid, Twilio, JWT key, OAuth).
+- Containers: `docker compose up --build` (web → :8080, api → :8081, SQL Server 2022).
+- MVC client libs restore with **LibMan** (`libman restore`); the SPA builds via `npm` with Node
+  pinned in `ClientApp/.nvmrc`. Secrets come from user-secrets locally, **Key Vault** in Azure.
 
-## Gotchas / important findings
+## State / important findings
 
-- **Framework is end-of-life.** Everything targets `netcoreapp2.1` (SDK pinned to `2.1.300` in
-  `global.json`); .NET Core 2.1 has been unsupported since **Aug 2021**. The upgrade to .NET 10 LTS
-  is the prerequisite for any cloud work.
-- **Migrations are incomplete.** Only `*ModelSnapshot.cs` files are committed under
-  `ContosoUniversity.Data/Migrations/` — **no migration classes**. A clean `InitialCreate` /
-  `InitialIdentity` must be regenerated before any managed (Azure SQL) deployment will work.
-- **Hosting model is inconsistent.** `Web/Program.cs` uses `WebHost.CreateDefaultBuilder` + `Startup`;
-  `Api/Program.cs` hand-builds a raw `WebHostBuilder` (`UseKestrel`/`UseIISIntegration`). When
-  upgrading, normalize both to the generic host **but keep the `Startup` classes** so the
-  `WebApplicationFactory` integration tests keep working.
-- **`Web.IntegrationTests` is not in the `.sln`** — run it explicitly; it won't build via the solution.
-- **Data Protection uses the default local key ring** — Identity cookies/antiforgery break across
-  multiple instances or container restarts. Must be persisted to shared storage before scaling out.
-- **JWT signing key is a symmetric secret in config** — the sharpest security item; move to a vault and rotate.
-- Front-end MVC libs use **Bower** (deprecated); the SPA builds via an MSBuild `npm run build` target.
+Phases 1–4 are **done** on `feat/azure-migration`: the solution builds on `net10.0` and the
+unit/controller tests pass (Data 14 / Api 12 / Web 122). Key facts about the current code:
 
-## Azure migration (planned)
+- **On .NET 10 (LTS).** All projects target `net10.0` (`global.json` SDK `10.0.100`). Class libraries
+  use `FrameworkReference Microsoft.AspNetCore.App`; hosts use the generic host while **keeping the
+  `Startup` classes** so the `WebApplicationFactory` tests keep working.
+- **Real migrations exist.** `InitialCreate` (ApplicationContext) and `InitialIdentity`
+  (SecureApplicationContext, under `Migrations/SecureApplication/`) are committed. The `*/Migrations/*`
+  `.gitignore` rule that used to hide migration classes has been removed.
+- **Secrets via Key Vault + Managed Identity.** JWT key, SendGrid, Twilio and OAuth secrets load from
+  Key Vault at startup (config source in `Program.cs`, gated on `KeyVaultUri`); Azure SQL is reached
+  passwordlessly (`Authentication=Active Directory Default`). No passwords in source.
+- **Data Protection** keys persist to Azure Blob + a Key Vault key (gated on `DataProtection:BlobUri`);
+  HSTS/HTTPS + forwarded headers are on outside Development; health checks at `/health/live` and
+  `/health/ready`; App Insights when `APPLICATIONINSIGHTS_CONNECTION_STRING` is set. All Azure wiring
+  is config-gated, so local/test runs work without Azure.
+- **`Web.IntegrationTests` is still not in the `.sln`** — run it explicitly. It now uses
+  **Testcontainers** (real SQL Server), so it **requires a running Docker daemon**.
+- **AutoMapper 15.1.1** (the DI-extensions package was merged into `AutoMapper` in v13). **react-scripts
+  5** for the SPA — CRA is EOL, so a Vite migration is the eventual fix and transitive npm-audit
+  advisories remain.
+
+## Azure migration (in progress)
 
 Target: **replatform** to Azure PaaS — .NET 10 containers on App Service, Azure SQL, Key Vault +
 Managed Identity, Azure DevOps Pipelines CI/CD. Design maps 1:1 to AWS (table in the dossier).
@@ -75,15 +84,15 @@ Managed Identity, Azure DevOps Pipelines CI/CD. Design maps 1:1 to AWS (table in
 
 ### Phase map (see the runbook for detail)
 
-| Phase | Goal |
-|------:|------|
-| 0 | Baseline & safety net — branch, confirm green tests on 2.1 |
-| 1 | **Upgrade to .NET 10 (LTS)** — retarget projects, bump packages, modernize hosts, fix breaking APIs, all tests green |
-| 2 | Cloud-ready code — single SQL provider, **real migrations**, secrets → Key Vault + Managed Identity, Data Protection key ring, forwarded headers/HSTS, health checks, telemetry |
-| 3 | Containerize — multi-stage Dockerfiles, Compose, drop Bower |
-| 4 | Provision Azure with **Terraform** (`azurerm`, remote state in a storage-account backend) |
-| 5 | CI/CD — Azure DevOps Pipelines via Workload Identity Federation → ACR → migrate → staging slot → approval → blue-green swap |
-| 6 | Cutover & harden — DNS/TLS, private endpoints, autoscale, DR, cost, cleanup |
+| Phase | Status | Goal |
+|------:|:------:|------|
+| 0 | ✅ | Baseline & safety net — branch `feat/azure-migration` (2.1 is unbuildable on the current toolchain, so the upgrade *is* the baseline) |
+| 1 | ✅ | **Upgrade to .NET 10 (LTS)** — projects retargeted, packages bumped, hosts modernized, breaking APIs fixed, tests green |
+| 2 | ✅ | Cloud-ready code — single SQL provider, **real migrations**, secrets → Key Vault + Managed Identity, Data Protection key ring, forwarded headers/HSTS, health checks, telemetry |
+| 3 | ✅ | Containerize — multi-stage Dockerfiles, Compose, Bower → LibMan (image build/`compose up` need a Docker daemon) |
+| 4 | ✅ | Provision Azure with **Terraform** (`azurerm`, remote state) — `terraform validate` passes; `plan/apply` pending Azure creds |
+| 5 | ⬜ | CI/CD — Azure DevOps Pipelines via Workload Identity Federation → ACR → migrate → staging slot → approval → blue-green swap |
+| 6 | ⬜ | Cutover & harden — DNS/TLS, private endpoints, autoscale, DR, cost, cleanup |
 
 ### Confirmed decisions / defaults
 
@@ -96,11 +105,13 @@ Managed Identity, Azure DevOps Pipelines CI/CD. Design maps 1:1 to AWS (table in
 
 ### Suggested PR sequence
 
-`feat/net10-upgrade` → `feat/cloud-ready` → `feat/containerize` → `feat/infra-terraform` → `feat/cicd` → Phase 6 issues.
+Phases 1–4 landed together on **`feat/azure-migration`** (one commit per phase). Remaining: `feat/cicd`
+(Phase 5) → Phase 6 issues. The originally-planned per-phase split (`feat/net10-upgrade` →
+`feat/cloud-ready` → `feat/containerize` → `feat/infra-terraform`) is described in the runbook.
 
 ## Conventions
 
-- Keep `master` releasable; do migration work on the per-phase feature branches above.
+- Keep `master` releasable; migration work is on `feat/azure-migration` (one commit per phase).
 - Don't reintroduce secrets into source — use user-secrets locally, Key Vault in the cloud.
 - When upgrading packages, prefer the implicit shared framework (`Microsoft.NET.Sdk.Web`) and
   `FrameworkReference` for class libraries over pinned `Microsoft.AspNetCore.*` package versions.
