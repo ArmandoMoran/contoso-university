@@ -13,6 +13,13 @@ RUN dotnet restore ContosoUniversity.Web/ContosoUniversity.Web.csproj
 
 # Copy the rest and publish.
 COPY . .
+
+# Restore client-side libraries (Bower was replaced by LibMan). wwwroot/lib is
+# git-ignored, so fetch it during the image build so the published site is styled.
+RUN dotnet tool install --global Microsoft.Web.LibraryManager.Cli --version 3.0.71
+ENV PATH="${PATH}:/root/.dotnet/tools"
+RUN cd ContosoUniversity.Web && libman restore
+
 RUN dotnet publish ContosoUniversity.Web/ContosoUniversity.Web.csproj -c Release -o /app --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
