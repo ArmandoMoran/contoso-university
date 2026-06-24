@@ -80,6 +80,7 @@ Managed Identity, Azure DevOps Pipelines CI/CD. Design maps 1:1 to AWS (table in
 **Full deliverables** (read these before doing migration work):
 - `docs/cloud-migration/implementation-plan.md` — the executable, phase-by-phase runbook (commands, acceptance criteria, rollback, risk register).
 - `docs/cloud-migration/architecture.drawio` — editable target architecture + CI/CD pipeline diagrams.
+- `docs/cloud-migration/migration-dossier.html` — one-page write-up (AWS/Azure adaptation, code changes, architecture, build pipeline); open in a browser and Print → Save as PDF. Published: https://claude.ai/code/artifact/74d63914-edec-4127-83d8-987c837c71fc
 - Migration dossier (the "why"): https://claude.ai/code/artifact/a202a9e0-ec35-41ab-9172-b2ffab0abdd6
 
 ### Phase map (see the runbook for detail)

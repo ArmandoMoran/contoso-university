@@ -1,0 +1,582 @@
+<title>Contoso University → Azure · Migration Dossier</title>
+<style>
+  :root {
+    --ground: #EDF1F5;
+    --panel: #FFFFFF;
+    --text: #16212B;
+    --muted: #53626F;
+    --accent: #245EA8;   /* steel azure — modern / target / Azure */
+    --legacy: #B45309;   /* rust amber — legacy / EOL / risk */
+    --ok: #1F7A4D;       /* verified */
+    --line: rgba(22,33,43,.14);
+    --line-strong: rgba(22,33,43,.28);
+    --ground-2: #E2E8EF;
+
+    --font-display: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --font-body: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --font-mono: "Cascadia Code", "Cascadia Mono", Consolas, "SFMono-Regular", ui-monospace, monospace;
+
+    --maxw: 940px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+  /* ---- type ---- */
+  h1, h2, h3, .eyebrow, .stat-num, .tag, .pill, th { font-family: var(--font-display); }
+  .mono, code, .ver, pre, .tag, .pill, .step-k, .legend, .stat-num { font-family: var(--font-mono); }
+
+  h2 {
+    font-size: clamp(24px, 3.4vw, 33px);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    font-weight: 700;
+    margin: 0 0 .5rem;
+  }
+  h3 {
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    font-weight: 700;
+    margin: 1.8rem 0 .5rem;
+  }
+  p { margin: 0 0 1rem; }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  strong { font-weight: 700; }
+
+  .eyebrow {
+    font-size: 12.5px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0 0 .5rem;
+  }
+  .lede { font-size: 19px; color: var(--text); }
+  .muted { color: var(--muted); }
+
+  /* version token — the vernacular of this subject */
+  .ver {
+    display: inline-block;
+    font-size: .86em;
+    padding: .08em .42em;
+    border-radius: 4px;
+    background: var(--ground-2);
+    border: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .ver.legacy { color: var(--legacy); border-color: rgba(180,83,9,.35); background: rgba(180,83,9,.07); }
+  .ver.modern { color: var(--accent); border-color: rgba(36,94,168,.35); background: rgba(36,94,168,.07); }
+
+  /* ============ HERO ============ */
+  header.hero {
+    border-bottom: 1px solid var(--line-strong);
+    background:
+      linear-gradient(180deg, #fff 0%, var(--ground) 100%);
+  }
+  .hero-inner { max-width: var(--maxw); margin: 0 auto; padding: 30px 24px 40px; }
+  .doc-meta {
+    display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline;
+    font-family: var(--font-mono); font-size: 12.5px; color: var(--muted);
+    letter-spacing: .02em; margin-bottom: 34px;
+  }
+  .doc-meta b { color: var(--accent); font-weight: 700; }
+
+  .transform {
+    display: flex; align-items: stretch; gap: 0; flex-wrap: wrap;
+    margin: 6px 0 26px;
+  }
+  .tnode { flex: 1 1 230px; min-width: 200px; }
+  .tnode .tlabel { font-family: var(--font-mono); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .tnode .tbig { font-family: var(--font-mono); font-weight: 700; font-size: clamp(28px, 5vw, 44px); line-height: 1; letter-spacing: -.02em; margin: 6px 0 8px; }
+  .tnode.from .tbig { color: var(--legacy); }
+  .tnode.to .tbig { color: var(--accent); }
+  .tnode .tnote { font-size: 14px; color: var(--muted); font-family: var(--font-body); }
+  .tarrow {
+    flex: 0 0 64px; display: flex; align-items: center; justify-content: center;
+    color: var(--accent); font-family: var(--font-mono); font-size: 30px;
+  }
+  @media (max-width: 620px) { .tarrow { flex-basis: 100%; height: 30px; transform: rotate(90deg); } }
+
+  h1 {
+    font-size: clamp(28px, 5.2vw, 46px);
+    line-height: 1.04;
+    letter-spacing: -0.025em;
+    font-weight: 700;
+    margin: 0 0 14px;
+    max-width: 22ch;
+  }
+  .hero-sub { font-size: 18px; color: var(--muted); max-width: 60ch; margin: 0; }
+  .hero-sub b { color: var(--text); }
+
+  /* ============ STAT STRIP ============ */
+  .stats {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    background: var(--panel); margin: 32px 0 8px;
+  }
+  .stat { padding: 16px 14px; border-right: 1px solid var(--line); }
+  .stat:last-child { border-right: none; }
+  .stat-num { font-size: 26px; font-weight: 700; letter-spacing: -.02em; color: var(--text); line-height: 1; }
+  .stat-num .u { color: var(--accent); }
+  .stat-lab { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.3; font-family: var(--font-display); }
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(2) { border-right: none; }
+    .stat { border-bottom: 1px solid var(--line); }
+  }
+
+  /* ============ SECTIONS / SPINE ============ */
+  main { padding: 14px 0 40px; }
+  section { padding: 30px 0; border-top: 1px solid var(--line); }
+  section:first-child { border-top: none; }
+  .sec-head { margin-bottom: 14px; }
+  .sec-no { font-family: var(--font-mono); color: var(--accent); font-size: 13px; letter-spacing: .08em; }
+
+  /* ============ CARDS ============ */
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 18px 20px; margin: 14px 0;
+  }
+  .card.flag { border-left: 3px solid var(--legacy); }
+  .card.good { border-left: 3px solid var(--ok); }
+
+  /* ============ TABLES ============ */
+  .tbl-scroll { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; background: var(--panel); }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); font-weight: 700; background: #F6F8FA; position: sticky; top: 0; }
+  tr:last-child td { border-bottom: none; }
+  td.azure { color: var(--accent); font-family: var(--font-mono); font-size: 13.5px; }
+  td.aws { color: var(--legacy); font-family: var(--font-mono); font-size: 13.5px; }
+  .b4 { color: var(--legacy); }
+  .af { color: var(--accent); }
+  td .mono { font-size: 13px; }
+
+  /* ============ COMPARISON ROWS ============ */
+  .cmp { display: grid; grid-template-columns: 150px 1fr; gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: 12px 0; background: var(--panel); }
+  .cmp .k { background: #F6F8FA; padding: 14px 16px; font-family: var(--font-display); font-weight: 700; font-size: 14px; border-right: 1px solid var(--line); }
+  .cmp .v { padding: 14px 16px; font-size: 15px; }
+  .cmp .v .ba { display: block; margin-top: 6px; font-size: 13.5px; }
+  @media (max-width: 600px) { .cmp { grid-template-columns: 1fr; } .cmp .k { border-right: none; border-bottom: 1px solid var(--line); } }
+
+  /* ============ PIPELINE FLOW ============ */
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; margin: 16px 0; }
+  .step {
+    flex: 1 1 150px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 9px; padding: 12px 13px; position: relative; min-width: 140px;
+  }
+  .step .step-k { font-size: 11px; color: var(--accent); letter-spacing: .04em; }
+  .step .step-t { font-family: var(--font-display); font-weight: 700; font-size: 14.5px; margin: 4px 0 3px; letter-spacing: -.01em; }
+  .step .step-d { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+  .step.gate { border-color: rgba(180,83,9,.4); border-left: 3px solid var(--legacy); }
+  .step.prod { border-color: rgba(36,94,168,.5); border-left: 3px solid var(--accent); }
+
+  /* legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .swatch { width: 22px; height: 0; border-top-width: 2px; border-top-style: solid; display: inline-block; }
+
+  ul.tight { margin: .4rem 0 1rem; padding-left: 1.1rem; }
+  ul.tight li { margin: .3rem 0; }
+
+  .diagram-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); margin: 14px 0; }
+  .diagram-wrap svg { display: block; min-width: 760px; width: 100%; height: auto; }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+  footer { border-top: 1px solid var(--line-strong); padding: 24px 0 50px; font-size: 13px; color: var(--muted); }
+  footer .mono { font-size: 12.5px; }
+
+  /* ============ PRINT (Save as PDF) ============ */
+  @media print {
+    :root { --ground: #fff; }
+    body { background: #fff; font-size: 11.5pt; }
+    a { color: var(--text); text-decoration: underline; }
+    .card, .tbl-scroll, .cmp, .step, .stats, .diagram-wrap { break-inside: avoid; }
+    section { break-inside: avoid-page; }
+    th { position: static; }
+    header.hero { background: #fff; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .tarrow { animation: none; }
+  }
+</style>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="doc-meta">
+      <span>CLOUD MIGRATION DOSSIER</span>
+      <span>repo · <b>alimon808/contoso-university</b></span>
+      <span>executed on a fork · 2026</span>
+      <span>status · <b>Phases 1–4 done</b></span>
+    </div>
+
+    <p class="eyebrow">The whole exercise in one line</p>
+    <div class="transform">
+      <div class="tnode from">
+        <div class="tlabel">Inherited</div>
+        <div class="tbig">netcoreapp2.1</div>
+        <div class="tnote">End of life since Aug 2021 · SDK pinned to a version no longer installable · would not build.</div>
+      </div>
+      <div class="tarrow" aria-hidden="true">&#10142;</div>
+      <div class="tnode to">
+        <div class="tlabel">Shipped</div>
+        <div class="tbig">net10.0</div>
+        <div class="tnote">Current LTS · builds clean · 148 unit/controller tests green · cloud-ready &amp; containerized.</div>
+      </div>
+    </div>
+
+    <h1>Adapting a legacy ASP.NET Core monolith to the cloud</h1>
+    <p class="hero-sub">This is not a proposal — it's a write-up of an <b>actual migration I ran</b> against the
+      Contoso University repository: what the code needed, the Azure (and AWS) target, the architecture, and the
+      build pipeline. Every recommendation below was implemented and verified, or is flagged honestly as pending.</p>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-num">10</div><div class="stat-lab">projects retargeted to .NET 10</div></div>
+      <div class="stat"><div class="stat-num">148<span class="u"> ✓</span></div><div class="stat-lab">tests passing (Data / Api / Web)</div></div>
+      <div class="stat"><div class="stat-num">0</div><div class="stat-lab">passwords — Managed Identity end to end</div></div>
+      <div class="stat"><div class="stat-num">2</div><div class="stat-lab">real EF migrations regenerated</div></div>
+      <div class="stat"><div class="stat-num">1:1</div><div class="stat-lab">Azure design that maps to AWS</div></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- 01 ASSESSMENT -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow"><span class="sec-no">// 01</span> &nbsp; What I was handed</p>
+      <h2>A well-factored monolith, frozen in 2018</h2>
+    </div>
+    <p>The solution is genuinely well-structured — a web app, a REST API, a React SPA, and shared
+      Common/Data layers using Repository + Unit of Work, AutoMapper, the options pattern, and multiple
+      <code>DbContext</code>s. The problem was never the architecture; it was that everything sat on a runtime
+      that has been unsupported for years, with a handful of choices that quietly block any cloud move.</p>
+
+    <div class="card flag">
+      <h3 style="margin-top:0">The blockers, before touching anything</h3>
+      <ul class="tight">
+        <li><strong>Unbuildable baseline.</strong> Targets <span class="ver legacy">netcoreapp2.1</span>, SDK pinned to <code>2.1.300</code> in <code>global.json</code> — not even installable on a current machine. The "green tests on 2.1" baseline was a fiction; the upgrade <em>is</em> the baseline.</li>
+        <li><strong>No migration history.</strong> Only <code>*ModelSnapshot.cs</code> committed — <em>zero</em> migration classes. Azure SQL has nothing to apply. (Root cause turned out to be a <code>.gitignore</code> rule — see §03.)</li>
+        <li><strong>Secrets &amp; state tied to the box.</strong> JWT signing key is a symmetric secret in config; Data Protection uses the default <em>local</em> key ring (cookies break across instances/restarts); connection string hardcoded to LocalDB.</li>
+        <li><strong>Runtime-OS branching.</strong> The DB provider was chosen by inspecting the OS (LocalDB / SQLite / InMemory) — fine for a tutorial, wrong for a reproducible cloud image.</li>
+        <li><strong>Deprecated toolchain.</strong> Bower for client libs, Swashbuckle <span class="ver legacy">1.0.0</span>, xUnit 2.2, Travis CI, two different hosting models (one hand-built <code>WebHostBuilder</code>).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 02 STRATEGY -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow"><span class="sec-no">// 02</span> &nbsp; The cloud target</p>
+      <h2>Replatform to managed PaaS — portable by design</h2>
+    </div>
+    <p>A lift-and-shift to VMs would have carried every problem above into the cloud. A full rewrite to
+      microservices/serverless wasn't warranted — the monolith is healthy. The right move is a
+      <strong>replatform</strong>: modernize the runtime, push every host-bound dependency (secrets, keys,
+      database identity) out to managed services, containerize, and let a managed platform run it.</p>
+    <p>I designed against <strong>Azure App Service for Containers</strong>, but deliberately chose services
+      that have a clean <strong>1:1 AWS equivalent</strong>, so the same design ports without rethinking. The
+      only Azure-specific glue is the SDK names — the shapes are identical.</p>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Concern</th><th>Azure (built)</th><th>AWS equivalent</th><th>Why this service</th></tr></thead>
+        <tbody>
+          <tr><td>Compute</td><td class="azure">App Service for Containers</td><td class="aws">App Runner / ECS Fargate</td><td>Run the container, skip the OS. Slots give blue-green.</td></tr>
+          <tr><td>Relational data</td><td class="azure">Azure SQL Database</td><td class="aws">RDS / Aurora (SQL Server)</td><td>Managed SQL Server; PITR, failover groups, passwordless auth.</td></tr>
+          <tr><td>Secrets</td><td class="azure">Key Vault</td><td class="aws">Secrets Manager</td><td>JWT key, SendGrid, Twilio, OAuth — out of config entirely.</td></tr>
+          <tr><td>Workload identity</td><td class="azure">Managed Identity + RBAC</td><td class="aws">IAM roles</td><td>No credentials anywhere; the platform proves who the app is.</td></tr>
+          <tr><td>Key ring / blobs</td><td class="azure">Blob Storage</td><td class="aws">S3</td><td>Shared Data Protection key ring so auth survives scale-out.</td></tr>
+          <tr><td>Edge / WAF</td><td class="azure">Front Door + WAF</td><td class="aws">CloudFront + WAF</td><td>TLS termination, OWASP rules, global routing.</td></tr>
+          <tr><td>Image registry</td><td class="azure">Container Registry (ACR)</td><td class="aws">Elastic Container Registry</td><td>Private images, pulled via the app's identity.</td></tr>
+          <tr><td>Telemetry</td><td class="azure">App Insights + Log Analytics</td><td class="aws">CloudWatch + X-Ray</td><td>Request tracing, health, alerting → auto-rollback.</td></tr>
+          <tr><td>Static SPA</td><td class="azure">Static Web App</td><td class="aws">Amplify / S3 + CloudFront</td><td>The React build is static; it doesn't need a server.</td></tr>
+          <tr><td>CI/CD</td><td class="azure">Azure DevOps Pipelines</td><td class="aws">CodePipeline (or GitHub Actions)</td><td>Multi-stage YAML, OIDC federation, environment gates.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="font-size:14px">Confirmed defaults: region <code>eastus</code>, prefix <code>contoso-univ</code>,
+      <code>staging</code> + <code>prod</code> slots, Entra-only SQL auth, Terraform for IaC.</p>
+  </section>
+
+  <!-- 03 CODE -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow"><span class="sec-no">// 03</span> &nbsp; Code I recommend changing — and did</p>
+      <h2>Six fronts, each with a reason</h2>
+    </div>
+    <p>None of the cloud services matter until the code can use them. These are the concrete changes,
+      grouped, each shown as <span class="b4">before</span> → <span class="af">after</span>.</p>
+
+    <div class="cmp">
+      <div class="k">Runtime</div>
+      <div class="v">Retarget all 10 projects and modernize hosting so the platform — not the OS — runs the app.
+        <span class="ba"><span class="b4">netcoreapp2.1, two hosting models, <code>UseMvc</code>, <code>IHostingEnvironment</code></span> →
+        <span class="af"><span class="ver modern">net10.0</span>, one generic host (keeping <code>Startup</code> so the integration tests survive), endpoint routing, Swashbuckle 7 <code>OpenApiInfo</code>.</span></span>
+      </div>
+    </div>
+
+    <div class="cmp">
+      <div class="k">Data</div>
+      <div class="v">One provider, real migration history, resilient connections.
+        <span class="ba"><span class="b4">OS-branched LocalDB/SQLite/InMemory, no migration classes</span> →
+        <span class="af">single SQL Server provider with <code>EnableRetryOnFailure</code>; regenerated <code>InitialCreate</code> + <code>InitialIdentity</code>; idempotent deploy scripts.</span></span>
+      </div>
+    </div>
+
+    <div class="cmp">
+      <div class="k">Security</div>
+      <div class="v">Nothing secret in source; nothing reached with a password.
+        <span class="ba"><span class="b4">JWT key + SendGrid/Twilio/OAuth in config; SQL via connection-string creds</span> →
+        <span class="af">Key Vault layered as a config source via <code>DefaultAzureCredential</code> (Managed Identity); SQL via <code>Authentication=Active Directory Default</code>.</span></span>
+      </div>
+    </div>
+
+    <div class="cmp">
+      <div class="k">Resilience</div>
+      <div class="v">Survive scale-out and sit correctly behind an edge.
+        <span class="ba"><span class="b4">local Data Protection key ring; HTTPS a config toggle; no forwarded headers</span> →
+        <span class="af">DP keys persisted to Blob + wrapped by a Key Vault key; HSTS/HTTPS always-on outside Dev; forwarded headers for Front Door.</span></span>
+      </div>
+    </div>
+
+    <div class="cmp">
+      <div class="k">Observability</div>
+      <div class="v">Make the platform able to tell if the app is alive and healthy.
+        <span class="ba"><span class="b4">no health endpoints, no telemetry</span> →
+        <span class="af"><code>/health/live</code> + <code>/health/ready</code> (with a DB check), Application Insights wired on a connection string.</span></span>
+      </div>
+    </div>
+
+    <div class="cmp">
+      <div class="k">Front-end &amp; tests</div>
+      <div class="v">Drop dead tooling; test against the real engine.
+        <span class="ba"><span class="b4">Bower; EF InMemory integration tests; AutoMapper 12 (CVE); react-scripts 3 (EOL)</span> →
+        <span class="af">LibMan + pinned Node; Testcontainers (real SQL Server); AutoMapper <span class="ver modern">15.1.1</span>; react-scripts <span class="ver modern">5</span>.</span></span>
+      </div>
+    </div>
+
+    <div class="card good">
+      <h3 style="margin-top:0">What "based on the real exercise" actually surfaced</h3>
+      <p style="margin-bottom:.5rem">The plan looked tidy; reality had teeth. Three findings worth keeping:</p>
+      <ul class="tight">
+        <li><strong>The missing migrations were a <code>.gitignore</code> bug.</strong> The repo wasn't missing migrations by accident — a <code>*/Migrations/*</code> rule was silently ignoring every migration class. Deleting stale snapshots and removing the rule produced a real history.</li>
+        <li><strong>The AutoMapper bump was a security fix, not cosmetics.</strong> 12.0.1 carries a high-severity DoS advisory (<code>GHSA-rvv3-g6hj-g44x</code>); only <span class="ver modern">15.1.1</span> clears it, which then required an <code>ILoggerFactory</code> on <code>MapperConfiguration</code>.</li>
+        <li><strong>CRA's upgrade fought back.</strong> <code>react-scripts 5</code> on a clean install exposed a real peer conflict (<code>redux-thunk</code> needing <code>redux@4</code>); <code>--legacy-peer-deps</code> had only hidden it behind a broken <code>ajv</code> tree. Aligning the deps let it compile.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 04 ARCHITECTURE -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow"><span class="sec-no">// 04</span> &nbsp; Architecture</p>
+      <h2>Target topology on Azure</h2>
+    </div>
+    <p>Public traffic enters through Front Door + WAF. Two container apps (Web + API) share one Linux plan,
+      each with a <code>staging</code> slot for blue-green. Every backing service is reached by the app's
+      <strong>system-assigned Managed Identity</strong> — the dashed lines below carry an identity token, never a password.</p>
+
+    <figure style="margin:0">
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 1000 560" role="img" aria-label="Azure target architecture diagram">
+          <defs>
+            <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+              <path d="M0,0 L9,4.5 L0,9 z" fill="#53626F"></path>
+            </marker>
+            <marker id="arrmi" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+              <path d="M0,0 L9,4.5 L0,9 z" fill="#245EA8"></path>
+            </marker>
+          </defs>
+
+          <!-- region boundary -->
+          <rect x="232" y="96" width="600" height="404" rx="12" fill="#F6F8FA" stroke="#245EA8" stroke-dasharray="5 5" stroke-opacity=".55"></rect>
+          <text x="248" y="120" font-family="Consolas,monospace" font-size="13" fill="#245EA8">Azure — Primary Region (eastus) · paired region for DR</text>
+
+          <!-- users -->
+          <g font-family="Segoe UI, sans-serif">
+            <rect x="40" y="150" width="140" height="60" rx="9" fill="#fff" stroke="#16212B" stroke-opacity=".35"></rect>
+            <text x="110" y="176" font-size="14" font-weight="700" text-anchor="middle" fill="#16212B">End users</text>
+            <text x="110" y="194" font-size="11.5" text-anchor="middle" fill="#53626F">browser · mobile</text>
+          </g>
+
+          <!-- front door -->
+          <g font-family="Segoe UI, sans-serif">
+            <rect x="40" y="250" width="160" height="64" rx="9" fill="#EAF1FA" stroke="#245EA8"></rect>
+            <text x="120" y="276" font-size="14" font-weight="700" text-anchor="middle" fill="#245EA8">Front Door + WAF</text>
+            <text x="120" y="295" font-size="11.5" text-anchor="middle" fill="#53626F">TLS · OWASP · CDN</text>
+          </g>
+
+          <!-- compute group -->
+          <rect x="250" y="150" width="330" height="180" rx="10" fill="#fff" stroke="#16212B" stroke-opacity=".18"></rect>
+          <text x="266" y="172" font-family="Consolas,monospace" font-size="12" fill="#53626F">App Service Plan · Linux containers</text>
+          <g font-family="Segoe UI, sans-serif">
+            <rect x="266" y="184" width="200" height="48" rx="8" fill="#EAF1FA" stroke="#245EA8"></rect>
+            <text x="278" y="204" font-size="13.5" font-weight="700" fill="#245EA8">Web App · MVC</text>
+            <text x="278" y="221" font-size="11" fill="#53626F">.NET 10 · + staging slot</text>
+
+            <rect x="266" y="244" width="200" height="48" rx="8" fill="#EAF1FA" stroke="#245EA8"></rect>
+            <text x="278" y="264" font-size="13.5" font-weight="700" fill="#245EA8">REST API · Swagger</text>
+            <text x="278" y="281" font-size="11" fill="#53626F">.NET 10 · + staging slot</text>
+
+            <rect x="476" y="184" width="96" height="108" rx="8" fill="#F2F5F8" stroke="#16212B" stroke-opacity=".22"></rect>
+            <text x="524" y="232" font-size="11.5" font-weight="700" text-anchor="middle" fill="#16212B">/health</text>
+            <text x="524" y="250" font-size="10.5" text-anchor="middle" fill="#53626F">live · ready</text>
+          </g>
+
+          <!-- static web app -->
+          <g font-family="Segoe UI, sans-serif">
+            <rect x="266" y="348" width="306" height="46" rx="8" fill="#fff" stroke="#16212B" stroke-opacity=".25"></rect>
+            <text x="419" y="368" font-size="13" font-weight="700" text-anchor="middle" fill="#16212B">Static Web App — React SPA</text>
+            <text x="419" y="384" font-size="10.5" text-anchor="middle" fill="#53626F">built static · served at the edge</text>
+          </g>
+
+          <!-- app insights -->
+          <g font-family="Segoe UI, sans-serif">
+            <rect x="266" y="410" width="306" height="44" rx="8" fill="#fff" stroke="#16212B" stroke-opacity=".25"></rect>
+            <text x="419" y="437" font-size="12.5" font-weight="700" text-anchor="middle" fill="#16212B">Application Insights + Log Analytics</text>
+          </g>
+
+          <!-- right column services -->
+          <g font-family="Segoe UI, sans-serif">
+            <rect x="624" y="150" width="190" height="44" rx="8" fill="#fff" stroke="#16212B" stroke-opacity=".25"></rect>
+            <text x="719" y="170" font-size="13" font-weight="700" text-anchor="middle" fill="#16212B">Container Registry</text>
+            <text x="719" y="186" font-size="10.5" text-anchor="middle" fill="#53626F">ACR · image pull</text>
+
+            <rect x="624" y="206" width="190" height="44" rx="8" fill="#EAF1FA" stroke="#245EA8"></rect>
+            <text x="719" y="226" font-size="13" font-weight="700" text-anchor="middle" fill="#245EA8">Azure SQL</text>
+            <text x="719" y="242" font-size="10.5" text-anchor="middle" fill="#53626F">Entra-only auth</text>
+
+            <rect x="624" y="262" width="190" height="44" rx="8" fill="#EAF1FA" stroke="#245EA8"></rect>
+            <text x="719" y="282" font-size="13" font-weight="700" text-anchor="middle" fill="#245EA8">Key Vault</text>
+            <text x="719" y="298" font-size="10.5" text-anchor="middle" fill="#53626F">secrets + DP key (RBAC)</text>
+
+            <rect x="624" y="318" width="190" height="44" rx="8" fill="#EAF1FA" stroke="#245EA8"></rect>
+            <text x="719" y="338" font-size="13" font-weight="700" text-anchor="middle" fill="#245EA8">Blob Storage</text>
+            <text x="719" y="354" font-size="10.5" text-anchor="middle" fill="#53626F">Data Protection key ring</text>
+          </g>
+
+          <!-- external saas -->
+          <g font-family="Segoe UI, sans-serif">
+            <rect x="864" y="206" width="118" height="156" rx="9" fill="#FBF3EA" stroke="#B45309" stroke-opacity=".5"></rect>
+            <text x="923" y="228" font-size="11" font-weight="700" text-anchor="middle" fill="#B45309">External SaaS</text>
+            <text x="923" y="260" font-size="11.5" text-anchor="middle" fill="#16212B">SendGrid</text>
+            <text x="923" y="288" font-size="11.5" text-anchor="middle" fill="#16212B">Twilio</text>
+            <text x="923" y="316" font-size="11.5" text-anchor="middle" fill="#16212B">Google /</text>
+            <text x="923" y="332" font-size="11.5" text-anchor="middle" fill="#16212B">Facebook OAuth</text>
+          </g>
+
+          <!-- connectors -->
+          <!-- users -> front door -->
+          <line x1="110" y1="210" x2="118" y2="248" stroke="#53626F" stroke-width="1.6" marker-end="url(#arr)"></line>
+          <!-- front door -> compute -->
+          <line x1="200" y1="270" x2="264" y2="222" stroke="#53626F" stroke-width="1.6" marker-end="url(#arr)"></line>
+          <!-- front door -> static web app -->
+          <line x1="200" y1="296" x2="264" y2="362" stroke="#53626F" stroke-width="1.6" marker-end="url(#arr)"></line>
+          <!-- acr -> compute (image) -->
+          <line x1="624" y1="172" x2="468" y2="200" stroke="#53626F" stroke-width="1.6" stroke-dasharray="1 0" marker-end="url(#arr)"></line>
+          <!-- compute -> sql / kv / blob (managed identity, dashed blue) -->
+          <line x1="466" y1="214" x2="622" y2="226" stroke="#245EA8" stroke-width="1.8" stroke-dasharray="4 4" marker-end="url(#arrmi)"></line>
+          <line x1="466" y1="262" x2="622" y2="282" stroke="#245EA8" stroke-width="1.8" stroke-dasharray="4 4" marker-end="url(#arrmi)"></line>
+          <line x1="466" y1="276" x2="622" y2="336" stroke="#245EA8" stroke-width="1.8" stroke-dasharray="4 4" marker-end="url(#arrmi)"></line>
+          <!-- compute -> app insights (routed down the left gutter, around the SPA box) -->
+          <path d="M266,288 C244,322 244,400 264,430" fill="none" stroke="#53626F" stroke-width="1.4" marker-end="url(#arr)"></path>
+          <!-- compute -> external -->
+          <line x1="466" y1="208" x2="862" y2="250" stroke="#B45309" stroke-width="1.4" stroke-opacity=".7" marker-end="url(#arr)"></line>
+        </svg>
+      </div>
+      <figcaption>Editable source: <code>docs/cloud-migration/architecture.drawio</code> (this diagram + the CI/CD pipeline view), authored in <a href="https://draw.io">draw.io</a>.</figcaption>
+    </figure>
+
+    <div class="legend">
+      <span><span class="swatch" style="border-top-color:#245EA8; border-top-style:dashed;"></span> Managed Identity (passwordless)</span>
+      <span><span class="swatch" style="border-top-color:#53626F;"></span> HTTPS request / image pull</span>
+      <span><span class="swatch" style="border-top-color:#B45309;"></span> outbound to external SaaS</span>
+    </div>
+  </section>
+
+  <!-- 05 PIPELINE -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow"><span class="sec-no">// 05</span> &nbsp; Build pipeline</p>
+      <h2>One commit to production, with a gate in the middle</h2>
+    </div>
+    <p>Travis is retired in favor of an <strong>Azure DevOps multi-stage YAML pipeline</strong>
+      (<code>azure-pipelines.yml</code>). Source stays on GitHub; only the <em>pipeline</em> moves to Azure DevOps.
+      Azure is reached through an ARM <strong>service connection using Workload Identity Federation</strong> — OIDC,
+      so there are <strong>no stored cloud secrets</strong>.</p>
+
+    <div class="flow">
+      <div class="step"><div class="step-k">PR · branch policy</div><div class="step-t">Build &amp; test</div><div class="step-d">restore, build, all xUnit projects; React build on pinned Node.</div></div>
+      <div class="step"><div class="step-k">PR</div><div class="step-t">Scan</div><div class="step-d">CodeQL + dependency scan, <code>--vulnerable</code>, Trivy image scan. No push.</div></div>
+      <div class="step"><div class="step-k">main</div><div class="step-t">Image → ACR</div><div class="step-d">build &amp; push, tagged with the commit SHA.</div></div>
+      <div class="step"><div class="step-k">main</div><div class="step-t">Infra + migrate</div><div class="step-d">Terraform plan/apply; apply idempotent EF scripts to Azure SQL.</div></div>
+      <div class="step"><div class="step-k">main</div><div class="step-t">Deploy → staging</div><div class="step-d">to the staging slot; smoke test + poll <code>/health/ready</code>.</div></div>
+      <div class="step gate"><div class="step-k">environment</div><div class="step-t">Approval gate</div><div class="step-d">the <code>prod</code> environment requires a reviewer before swap.</div></div>
+      <div class="step prod"><div class="step-k">prod</div><div class="step-t">Slot swap</div><div class="step-d">zero-downtime swap; App Insights alert → auto swap-back on regression.</div></div>
+    </div>
+
+    <h3>Tools in the chain</h3>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Stage</th><th>Tooling</th></tr></thead>
+        <tbody>
+          <tr><td>Build / test</td><td class="mono">.NET 10 SDK · dotnet test (xUnit) · NodeTool@0 (pinned) · Testcontainers</td></tr>
+          <tr><td>Security</td><td class="mono">GitHub Advanced Security (CodeQL + deps) · MicrosoftSecurityDevOps · Trivy</td></tr>
+          <tr><td>Package</td><td class="mono">Docker Buildx · Azure Container Registry</td></tr>
+          <tr><td>Database</td><td class="mono">dotnet-ef (idempotent scripts / migrations bundle)</td></tr>
+          <tr><td>Infra</td><td class="mono">Terraform (azurerm ~&gt; 4.0) · remote state w/ locking</td></tr>
+          <tr><td>Deploy</td><td class="mono">AzureCLI@2 · AzureWebAppContainer@1 · AzureAppServiceManage@0 (swap)</td></tr>
+          <tr><td>Auth</td><td class="mono">Workload Identity Federation (OIDC) — no stored secrets</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 06 STATUS -->
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow"><span class="sec-no">// 06</span> &nbsp; Honest status</p>
+      <h2>What's verified, what's pending</h2>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Area</th><th>State</th><th>Evidence / blocker</th></tr></thead>
+        <tbody>
+          <tr><td>.NET 10 build + tests</td><td class="af">Verified ✓</td><td>solution builds; 14 + 12 + 122 tests pass</td></tr>
+          <tr><td>Cloud-ready code (KV, MI, DP, health, HTTPS)</td><td class="af">Verified ✓</td><td>compiles &amp; tests green; Azure wiring is config-gated</td></tr>
+          <tr><td>EF migrations</td><td class="af">Verified ✓</td><td>generate + idempotent scripts produced</td></tr>
+          <tr><td>Terraform infra</td><td class="af">Validated ✓</td><td><code>terraform validate</code> passes against azurerm 4.x</td></tr>
+          <tr><td>SPA / AutoMapper upgrades</td><td class="af">Verified ✓</td><td><code>npm run build</code> compiles; advisory cleared</td></tr>
+          <tr><td>Container image build · Testcontainers run</td><td class="b4">Pending</td><td>local Docker engine not serving the API (Desktop up, engine unresponsive)</td></tr>
+          <tr><td>Azure deploy · pipeline run</td><td class="b4">Pending</td><td>needs Azure subscription + the Phase 5 <code>azure-pipelines.yml</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="font-size:14.5px">The two pending items are environment/credential gated, not code: the
+      Dockerfiles never reached a build step and Testcontainers failed at endpoint validation — both <em>before</em>
+      any project code ran.</p>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p class="mono">Contoso University → Azure · migration dossier · grounded in an executed migration of
+    <span style="color:var(--accent)">alimon808/contoso-university</span>.</p>
+  <p>Companion files in the repo: <code>docs/cloud-migration/implementation-plan.md</code> (phase-by-phase runbook),
+    <code>docs/cloud-migration/architecture.drawio</code> (editable diagrams), <code>infra/</code> (Terraform).
+    Tip: <strong>Print → Save as PDF</strong> for a shareable copy.</p>
+</footer>
