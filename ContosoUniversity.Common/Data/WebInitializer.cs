@@ -58,6 +58,14 @@ namespace ContosoUniversity.Common.Data
 
         private async Task InitializeSecureContext()
         {
+            // Skip admin seeding when no administrator is configured (e.g. secrets not supplied,
+            // as in a container). Without this guard, UserManager.CreateAsync throws on a null password.
+            if (string.IsNullOrWhiteSpace(_adminIdentityUser.UserName) || string.IsNullOrWhiteSpace(_adminIdentityUser.Password))
+            {
+                _logger.LogInformation("Administrator credentials not configured; skipping admin user seeding.");
+                return;
+            }
+
             // abort if Administrator role exists
             if (_webContext.Roles.Any(r => r.Name == _adminIdentityUser.Role))
             {
