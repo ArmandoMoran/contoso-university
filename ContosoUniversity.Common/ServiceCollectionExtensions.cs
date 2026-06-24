@@ -26,10 +26,25 @@ namespace ContosoUniversity.Common
         {
             if (env.IsEnvironment("Testing"))
             {
-                services.AddDbContext<ApplicationContext>(optionsBuilder => optionsBuilder.UseInMemoryDatabase("TestDb"));
-                services.AddDbContext<SecureApplicationContext>(optionsBuilder => optionsBuilder.UseInMemoryDatabase("TestDb"));
-                services.AddDbContext<WebContext>(optionsBuilder => optionsBuilder.UseInMemoryDatabase("TestDb"));
-                services.AddDbContext<ApiContext>(optionsBuilder => optionsBuilder.UseInMemoryDatabase("TestDb"));
+                var testConnection = configuration.GetConnectionString("DefaultConnection");
+                if (string.IsNullOrWhiteSpace(testConnection))
+                {
+                    // Fast in-memory store for unit / controller tests (no connection string supplied).
+                    services.AddDbContext<ApplicationContext>(optionsBuilder => optionsBuilder.UseInMemoryDatabase("TestDb"));
+                    services.AddDbContext<SecureApplicationContext>(optionsBuilder => optionsBuilder.UseInMemoryDatabase("TestDb"));
+                    services.AddDbContext<WebContext>(optionsBuilder => optionsBuilder.UseInMemoryDatabase("TestDb"));
+                    services.AddDbContext<ApiContext>(optionsBuilder => optionsBuilder.UseInMemoryDatabase("TestDb"));
+                }
+                else
+                {
+                    // Real SQL Server (e.g. a Testcontainers instance) when a connection string is supplied,
+                    // so integration tests run the same provider as production. Registering a single
+                    // provider avoids EF's "only one database provider" conflict.
+                    services.AddDbContext<ApplicationContext>(optionsBuilder => optionsBuilder.UseSqlServer(testConnection));
+                    services.AddDbContext<SecureApplicationContext>(optionsBuilder => optionsBuilder.UseSqlServer(testConnection));
+                    services.AddDbContext<WebContext>(optionsBuilder => optionsBuilder.UseSqlServer(testConnection));
+                    services.AddDbContext<ApiContext>(optionsBuilder => optionsBuilder.UseSqlServer(testConnection));
+                }
             }
             else
             {
@@ -57,7 +72,10 @@ namespace ContosoUniversity.Common
             }
 
             services.AddScoped<UnitOfWork<ApplicationContext>, UnitOfWork<ApplicationContext>>();
-            services.AddScoped(typeof(IRepository<>), typeof(Repository<,>));
+            // Note: IRepository<T> is obtained via UnitOfWork's typed properties, never resolved
+            // from the container, so it is not registered as an open generic. (Repository<T,TContext>
+            // has arity 2, which can't satisfy the arity-1 IRepository<T> anyway — .NET's
+            // ValidateOnBuild rejects such a registration.)
 
             services.Configure<SampleData>(configuration.GetSection("SampleData"));
 

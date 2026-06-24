@@ -58,14 +58,16 @@ namespace ContosoUniversity.Web.Controllers
                 descending = true;
             }
 
-            if (descending)
+            // Sort with translatable expressions. EF Core can't translate reflection over a
+            // property name to SQL (it threw on real SQL Server, though the in-memory provider
+            // evaluated it client-side); map the known sort keys to typed expressions instead.
+            students = (sortOrder, descending) switch
             {
-                students = students.OrderByDescending(e => e.GetType().GetProperty(sortOrder).GetValue(e, null));
-            }
-            else
-            {
-                students = students.OrderBy(e => e.GetType().GetProperty(sortOrder).GetValue(e, null));
-            }
+                ("EnrollmentDate", true) => students.OrderByDescending(s => s.EnrollmentDate),
+                ("EnrollmentDate", false) => students.OrderBy(s => s.EnrollmentDate),
+                (_, true) => students.OrderByDescending(s => s.LastName),
+                (_, false) => students.OrderBy(s => s.LastName),
+            };
 
             int pageSize = 3;
 

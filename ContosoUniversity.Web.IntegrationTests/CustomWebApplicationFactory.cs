@@ -1,13 +1,12 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using ContosoUniversity.Common.Interfaces;
-using ContosoUniversity.Data;
 using ContosoUniversity.Data.DbContexts;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.MsSql;
 using Xunit;
@@ -44,36 +43,26 @@ namespace ContosoUniversity.Web.IntegrationTests
         {
             builder.UseEnvironment("Testing");
 
+            // Supplying a connection string makes AddCustomizedContext use SQL Server (the
+            // container) instead of the in-memory provider — a single provider, no conflict.
+            builder.ConfigureAppConfiguration((context, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["ConnectionStrings:DefaultConnection"] = _sqlContainer.GetConnectionString()
+                });
+            });
+
             builder.ConfigureTestServices(services =>
             {
-                // Point every context at the SQL container instead of the in-memory provider
-                // that AddCustomizedContext registers for the Testing environment.
-                ReplaceWithSqlContainer<ApplicationContext>(services);
-                ReplaceWithSqlContainer<SecureApplicationContext>(services);
-                ReplaceWithSqlContainer<WebContext>(services);
-                ReplaceWithSqlContainer<ApiContext>(services);
-
                 services.AddScoped<IDbInitializer, TestDbInitializer>();
 
+                // Create the schema and seed the container once, before the tests run.
                 using var scope = services.BuildServiceProvider().CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
                 db.Database.EnsureCreated();
                 Utilities.InitializeDbForTest(db);
             });
-        }
-
-        private void ReplaceWithSqlContainer<TContext>(IServiceCollection services) where TContext : DbContext
-        {
-            var toRemove = services
-                .Where(d => d.ServiceType == typeof(DbContextOptions<TContext>))
-                .ToList();
-            foreach (var descriptor in toRemove)
-            {
-                services.Remove(descriptor);
-            }
-
-            services.AddDbContext<TContext>(options =>
-                options.UseSqlServer(_sqlContainer.GetConnectionString()));
         }
     }
 }
